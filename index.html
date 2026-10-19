@@ -241,11 +241,13 @@ function render(rows){
 }
 
 function rsvp(status){
-  var s=(status||"").toLowerCase();
-  if(s.indexOf("maybe")>-1) return {cls:"prog",label:"Maybe",go:0.5};
-  if(s.indexOf("no")>-1||s.indexOf("can")>-1||s.indexOf("decl")>-1) return {cls:"todo",label:"Can't make it",go:0};
-  if(s.indexOf("conf")>-1||s.indexOf("yes")>-1||s.indexOf("going")>-1) return {cls:"done",label:"Coming",go:1};
-  return {cls:"todo",label:esc(status||"—"),go:0};
+  var s=(status||"").toLowerCase().trim();
+  if(!s) return {cls:"todo",label:"—",go:0};
+  if(/response|reply|pending|tbd|await|invited|haven/.test(s)) return {cls:"todo",label:"No reply",go:0};   // hasn't answered
+  if(/maybe|perhaps|unsure|not sure|\?/.test(s)) return {cls:"prog",label:"Maybe",go:0.5};
+  if(/confirm|yes|going|coming|attend/.test(s)) return {cls:"done",label:"Coming",go:1};
+  if(/no|can'?t|cannot|decline|nope|out/.test(s)) return {cls:"todo",label:"Can't make it",go:0};
+  return {cls:"todo",label:esc(status),go:0};
 }
 function renderGuests(rows){
   var guests=rows.filter(function(r){ return r && (r[0]||"").trim() && (r[0]||"").trim().toLowerCase()!=="name"; })

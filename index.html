@@ -191,10 +191,14 @@ function parseCSV(text){
   if(cur!==""||row.length){row.push(cur);rows.push(row);}
   return rows;
 }
+var MARKERS={PEOPLE:1,RESPONSIBILITIES:1,LIST:1,GUESTS:1,BUDGET:1,SETTLE:1};
 function section(rows,name){
   var out=[],i=0;
   for(;i<rows.length;i++){ if((rows[i][0]||"").trim().toUpperCase()===name){i+=2;break;} }
-  for(;i<rows.length;i++){ var r=rows[i]; if(!r||!(r[0]||"").trim())break; out.push(r); }
+  for(;i<rows.length;i++){ var r=rows[i]; var key=((r&&r[0])||"").trim().toUpperCase();
+    if(MARKERS[key]) break;                               // next section → stop
+    if(!r||!r.join("").trim()) continue;                  // blank row → skip, don't stop
+    out.push(r); }
   return out;
 }
 function num(v){var n=parseFloat(String(v||"").replace(/[^0-9.\-]/g,""));return isNaN(n)?0:n;}

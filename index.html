@@ -149,7 +149,7 @@
   </section>
 
   <section><div class="sec-head"><span class="sec-num">4</span><h2>Who's Coming</h2><span class="count" id="guestCount"></span><span class="rule"></span></div>
-    <p class="hint">RSVPs live from the <b>Guests</b> tab. Add a row <code>Name, Status</code> (Confirmed / Maybe / No) and the squad count updates.</p>
+    <p class="hint">RSVPs live from the <b>ppl</b> tab. Add a row <code>Name, Status</code> (Confirmed / Maybe / No) and the squad count updates.</p>
     <div class="scroll"><table><thead><tr><th>Guest</th><th>RSVP</th></tr></thead><tbody id="guests"></tbody></table></div>
   </section>
 
@@ -161,7 +161,7 @@ var SHEET_ID = "1uVJ9D0e5C8GDOToImbVC5mffUbI6eGt0APDsoqL86DY";
 /* main planning tab (first sheet) — faithful CSV export */
 var SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv";
 /* guest list — read a tab named exactly "Guests" by name */
-var GUESTS_URL = "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/gviz/tq?tqx=out:csv&headers=0&sheet=Guests";
+var GUESTS_URL = "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/gviz/tq?tqx=out:csv&headers=0&sheet=ppl";
 
 var COLORS={pink:"#FF7EB6",yellow:"#FFC53D",blue:"#56A8FF",red:"#FF6B6B",black:"#5A5A72",silver:"#C9CDE0"};
 var ROLE={pink:"Pink Ranger",yellow:"Yellow Ranger",blue:"Blue Ranger",red:"Red Ranger",black:"Black Ranger",silver:"Silver Ranger"};
@@ -252,7 +252,7 @@ function renderGuests(rows){
                  .map(function(r){ return {name:r[0], status:r[1]}; });
   var tb=document.getElementById("guests");
   if(!guests.length){
-    tb.innerHTML='<tr><td colspan="2" class="empty">No RSVPs yet — add a tab named <code>Guests</code> with columns <code>Name</code>, <code>Status</code>.</td></tr>';
+    tb.innerHTML='<tr><td colspan="2" class="empty">No RSVPs yet — add rows to the <code>ppl</code> tab: <code>Name</code>, <code>Status</code>.</td></tr>';
     document.getElementById("squad").textContent="RSVPs open";
     document.getElementById("guestCount").textContent="";
     return;

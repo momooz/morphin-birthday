@@ -242,14 +242,13 @@ function render(rows){
       '<td>'+esc(j.deadline)+'</td><td><span class="pill '+statusClass(j.status)+'">'+esc(j.status)+'</span></td></tr>';}).join("");
 
   var total=0, any=false;
-  document.getElementById("list").innerHTML=list.map(function(it){
-    var raw=String(it.cost||"").trim();
-    var hasCost=raw!=="" && !isNaN(parseFloat(raw.replace(/[^0-9.\-]/g,"")));
-    if(hasCost){ total+=num(raw); any=true; }
-    var col=COLORS[colorOf[(it.by||"").toLowerCase()]]||"#9A8FA6";
-    var ini=(it.by||"?").trim().charAt(0).toUpperCase();
-    return '<tr><td>'+esc(it.item)+'</td><td><span class="owner"><span class="mini" style="background:'+col+'">'+esc(ini)+'</span>'+esc(it.by)+'</span></td>'+
-      '<td class="num">'+(hasCost?money(num(raw)):"—")+'</td></tr>';}).join("");
+  document.getElementById("list").innerHTML=list.filter(function(it){return (it.item||"").trim();}).map(function(it){
+    var val=num(it.cost), hasCost=val>0;                 // blank / $0 → treated as "no cost yet"
+    if(hasCost){ total+=val; any=true; }
+    var by=(it.by||"").trim();
+    var col=COLORS[colorOf[by.toLowerCase()]]||"#9A8FA6";
+    var owner=by?'<span class="owner"><span class="mini" style="background:'+col+'">'+esc(by.charAt(0).toUpperCase())+'</span>'+esc(by)+'</span>':'<span style="color:var(--muted)">—</span>';
+    return '<tr><td>'+esc(it.item)+'</td><td>'+owner+'</td><td class="num">'+(hasCost?money(val):"—")+'</td></tr>';}).join("");
   document.getElementById("listTotal").textContent=any?money(total):"—";
 
   // ---- split the total evenly amongst the team, deriving "paid" from Covered by ----
@@ -257,9 +256,8 @@ function render(rows){
   var paid={}; people.forEach(function(p){paid[p.name.toLowerCase().trim()]=0;});
   var unassigned=0;
   list.forEach(function(it){
-    var raw=String(it.cost||"").trim();
-    if(raw===""||isNaN(parseFloat(raw.replace(/[^0-9.\-]/g,""))))return;
-    var amt=num(raw), key=(it.by||"").toLowerCase().trim();
+    var amt=num(it.cost); if(!(amt>0))return;           // ignore blank / $0 / placeholder rows
+    var key=(it.by||"").toLowerCase().trim();
     if(paid.hasOwnProperty(key)) paid[key]+=amt; else unassigned+=amt;
   });
   document.getElementById("splitN").textContent=n;

@@ -95,6 +95,16 @@
   .stat .k{color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:.06em}
   .stat.coming b{color:#2f6fb0} .stat.maybe b{color:#9a6b00} .stat.noreply b{color:var(--muted)}
   .stat.total{background:var(--ink)} .stat.total b{color:#fff} .stat.total .k{color:var(--yellow)}
+  .drop{background:var(--panel);border:1.5px solid var(--line);border-radius:22px;box-shadow:var(--shadow);overflow:hidden}
+  .drop>summary{list-style:none;cursor:pointer;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:1rem}
+  .drop>summary::-webkit-details-marker{display:none}
+  .drop>summary:hover{background:var(--panel2)}
+  .drop>summary b{color:var(--ink);font-weight:700}
+  .drop .chev{color:var(--muted);transition:transform .2s;font-size:.8rem;flex:none}
+  .drop[open] .chev{transform:rotate(180deg)}
+  .drop .inner{padding:2px 20px 20px}
+  .drop .inner .scroll{box-shadow:none}
+  .drop .hint{margin:0 0 14px}
   .bal{font-weight:600;font-variant-numeric:tabular-nums}
   .owes{color:var(--red)} .owed{color:#2f9e92} .zero{color:var(--muted)}
   .settlebox{margin-top:14px;background:#fff;border:1.5px dashed var(--line);border-radius:16px;padding:14px 16px;font-size:.9rem;line-height:1.7}
@@ -159,10 +169,15 @@
     </table></div>
   </section>
 
-  <section><div class="sec-head"><span class="sec-num">4</span><h2>Who's Coming</h2><span class="count" id="guestCount"></span><span class="rule"></span></div>
-    <p class="hint">RSVPs live from the <b>ppl</b> tab. Add a row <code>Name, Status</code> (Confirmed / Maybe / No) and these counts update.</p>
-    <div class="gstats" id="gstats"></div>
-    <div class="scroll"><table><thead><tr><th>Guest</th><th>RSVP</th></tr></thead><tbody id="guests"></tbody></table></div>
+  <section><div class="sec-head"><span class="sec-num">4</span><h2>Who's Coming</h2><span class="rule"></span></div>
+    <details class="drop">
+      <summary><span id="guestSummary">Loading RSVPs…</span><span class="chev">▾</span></summary>
+      <div class="inner">
+        <p class="hint">Live from the <b>ppl</b> tab — add a row <code>Name, Status</code> (Confirmed / Maybe / No) and this updates.</p>
+        <div class="gstats" id="gstats"></div>
+        <div class="scroll"><table><thead><tr><th>Guest</th><th>RSVP</th></tr></thead><tbody id="guests"></tbody></table></div>
+      </div>
+    </details>
   </section>
 
   <section><div class="sec-head"><span class="sec-num">5</span><h2>Split the Costs</h2><span class="rule"></span></div>
@@ -304,12 +319,12 @@ function rsvp(status){
 function renderGuests(rows){
   var guests=rows.filter(function(r){ return r && (r[0]||"").trim() && (r[0]||"").trim().toLowerCase()!=="name"; })
                  .map(function(r){ return {name:r[0], status:r[1]}; });
-  var tb=document.getElementById("guests");
+  var tb=document.getElementById("guests"), sum=document.getElementById("guestSummary");
   if(!guests.length){
     tb.innerHTML='<tr><td colspan="2" class="empty">No RSVPs yet — add rows to the <code>ppl</code> tab: <code>Name</code>, <code>Status</code>.</td></tr>';
     document.getElementById("gstats").innerHTML="";
+    sum.textContent="No RSVPs yet";
     document.getElementById("squad").textContent="RSVPs open";
-    document.getElementById("guestCount").textContent="";
     return;
   }
   var c={coming:0,maybe:0,noreply:0,cant:0,other:0};
@@ -324,8 +339,9 @@ function renderGuests(rows){
   h+=stat(c.coming+c.maybe,"likely headcount","total");
   h+=stat(guests.length,"invited","total");
   document.getElementById("gstats").innerHTML=h;
+  var head=c.coming+c.maybe;
+  sum.innerHTML='<b>~'+head+' for food</b> · '+c.coming+' coming'+(c.maybe?', '+c.maybe+' maybe':'')+' <span style="color:var(--muted)">— tap for list</span>';
   document.getElementById("squad").textContent=c.coming+" coming"+(c.maybe?" · "+c.maybe+" maybe":"");
-  document.getElementById("guestCount").textContent=guests.length+" invited";
 }
 
 function setStatus(live,txt){document.getElementById("status").innerHTML='<span class="dot-live '+(live?'':'dot-demo')+'"></span>'+txt;}

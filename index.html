@@ -88,6 +88,10 @@
   .todo{background:rgba(154,143,166,.18);color:#766c80}
   .empty{padding:22px;text-align:center;color:var(--muted);font-size:.9rem}
   .empty code{background:rgba(0,0,0,.05);padding:1px 6px;border-radius:5px}
+  .bal{font-weight:600;font-variant-numeric:tabular-nums}
+  .owes{color:var(--red)} .owed{color:#2f9e92} .zero{color:var(--muted)}
+  .settlebox{margin-top:14px;background:#fff;border:1.5px dashed var(--line);border-radius:16px;padding:14px 16px;font-size:.9rem;line-height:1.7}
+  .settlebox b{color:var(--ink)}
   .foot{margin-top:52px;padding-top:22px;border-top:1px solid var(--line);color:var(--muted);font-size:.84rem;text-align:center}
   @media (prefers-reduced-motion:reduce){*{animation:none!important}}
 </style>
@@ -151,6 +155,15 @@
   <section><div class="sec-head"><span class="sec-num">4</span><h2>Who's Coming</h2><span class="count" id="guestCount"></span><span class="rule"></span></div>
     <p class="hint">RSVPs live from the <b>ppl</b> tab. Add a row <code>Name, Status</code> (Confirmed / Maybe / No) and the squad count updates.</p>
     <div class="scroll"><table><thead><tr><th>Guest</th><th>RSVP</th></tr></thead><tbody id="guests"></tbody></table></div>
+  </section>
+
+  <section><div class="sec-head"><span class="sec-num">5</span><h2>Split the Costs</h2><span class="rule"></span></div>
+    <p class="hint">Total from The List, split evenly between the <span id="splitN">5</span> organisers. “Paid” is auto-summed from each item's <b>Covered by</b>.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Person</th><th class="num">Paid</th><th class="num">Fair share</th><th class="num">Balance</th><th>Result</th></tr></thead>
+      <tbody id="split"></tbody>
+    </table></div>
+    <div class="settlebox" id="settle">—</div>
   </section>
 
   <p class="foot">Live view of your Google Sheet · edit the Sheet and hit Refresh. Read-only here by design.</p>
@@ -238,6 +251,39 @@ function render(rows){
     return '<tr><td>'+esc(it.item)+'</td><td><span class="owner"><span class="mini" style="background:'+col+'">'+esc(ini)+'</span>'+esc(it.by)+'</span></td>'+
       '<td class="num">'+(hasCost?money(num(raw)):"—")+'</td></tr>';}).join("");
   document.getElementById("listTotal").textContent=any?money(total):"—";
+
+  // ---- split the total evenly amongst the team, deriving "paid" from Covered by ----
+  var n=people.length||1, share=total/n;
+  var paid={}; people.forEach(function(p){paid[p.name.toLowerCase().trim()]=0;});
+  var unassigned=0;
+  list.forEach(function(it){
+    var raw=String(it.cost||"").trim();
+    if(raw===""||isNaN(parseFloat(raw.replace(/[^0-9.\-]/g,""))))return;
+    var amt=num(raw), key=(it.by||"").toLowerCase().trim();
+    if(paid.hasOwnProperty(key)) paid[key]+=amt; else unassigned+=amt;
+  });
+  document.getElementById("splitN").textContent=n;
+  document.getElementById("split").innerHTML=people.map(function(p){
+    var pd=paid[p.name.toLowerCase().trim()]||0, bal=pd-share;
+    var cls=bal>0.004?"owed":bal<-0.004?"owes":"zero", sign=bal>0.004?"+":bal<-0.004?"−":"";
+    var res=bal>0.004?'<span class="pill done">Gets back '+money(bal)+'</span>':bal<-0.004?'<span class="pill prog">Owes '+money(bal)+'</span>':'<span class="pill todo">Even</span>';
+    var hex=COLORS[p.color]||"#9A8FA6", ini=p.name.trim().charAt(0).toUpperCase();
+    return '<tr><td><span class="owner"><span class="mini" style="background:'+hex+'">'+esc(ini)+'</span>'+esc(p.name)+'</span></td>'+
+      '<td class="num">'+money(pd)+'</td><td class="num">'+money(share)+'</td><td class="num bal '+cls+'">'+sign+money(bal)+'</td><td>'+res+'</td></tr>';
+  }).join("");
+  // who pays whom (greedy minimal transfers)
+  var cred=[],deb=[];
+  people.forEach(function(p){var net=(paid[p.name.toLowerCase().trim()]||0)-share;
+    if(net>0.004)cred.push({name:p.name,amt:net}); else if(net<-0.004)deb.push({name:p.name,amt:-net});});
+  cred.sort(function(a,b){return b.amt-a.amt;}); deb.sort(function(a,b){return b.amt-a.amt;});
+  var tx=[],di=0,ci=0;
+  while(di<deb.length&&ci<cred.length){ var m=Math.min(deb[di].amt,cred[ci].amt);
+    tx.push(esc(deb[di].name)+' pays '+esc(cred[ci].name)+' <b>'+money(m)+'</b>');
+    deb[di].amt-=m; cred[ci].amt-=m; if(deb[di].amt<0.004)di++; if(cred[ci].amt<0.004)ci++; }
+  var set=document.getElementById("settle");
+  if(total<=0) set.innerHTML='Add costs to The List to see the split.';
+  else if(!tx.length) set.innerHTML='All square — everyone has covered their share. 🎉';
+  else set.innerHTML='<b>Settle up</b> ($'+(Math.round(share*100)/100).toLocaleString()+' each):<br>'+tx.join('<br>')+(unassigned>0.004?'<br><span style="color:var(--muted)">('+money(unassigned)+' covered by host/unassigned — not split)</span>':'');
 }
 
 function rsvp(status){

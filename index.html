@@ -23,7 +23,6 @@
   .topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
     justify-content:center;background:rgba(255,244,250,.92);backdrop-filter:blur(6px);
     border-bottom:1px solid var(--line);padding:9px 16px;font-size:.82rem;color:var(--muted)}
-  .topbar b{color:var(--pink)}
   .topbar button{font-family:var(--font);font-weight:600;font-size:.78rem;color:var(--ink);
     background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:5px 14px;cursor:pointer}
   .topbar button:hover{border-color:var(--pink);color:var(--pink)}
@@ -53,6 +52,7 @@
     width:40px;height:40px;border-radius:14px;display:grid;place-items:center;
     box-shadow:0 4px 0 rgba(255,126,182,.35);flex:none}
   .sec-head h2{font-weight:600;font-size:1.8rem;margin:0}
+  .sec-head .count{font-size:.9rem;color:var(--muted);font-weight:500}
   .sec-head .rule{flex:1;height:3px;border-radius:3px;background:var(--line)}
   .hint{color:var(--muted);font-size:.86rem;margin:-8px 0 16px}
   .team{display:grid;grid-template-columns:repeat(auto-fit,minmax(172px,1fr));gap:18px}
@@ -68,7 +68,7 @@
   .ranger dd{margin:0}
   .ranger dd:empty::before{content:"—";color:var(--muted)}
   .scroll{overflow-x:auto;border:1.5px solid var(--line);border-radius:22px;background:var(--panel);box-shadow:var(--shadow)}
-  table{width:100%;border-collapse:collapse;min-width:480px}
+  table{width:100%;border-collapse:collapse;min-width:420px}
   th{font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:left;
     font-weight:600;padding:15px 18px;border-bottom:2px solid var(--line)}
   td{padding:13px 18px;border-bottom:1px solid var(--line);font-size:.92rem;vertical-align:middle}
@@ -86,6 +86,8 @@
   .done{background:rgba(86,168,255,.18);color:#2f6fb0}
   .prog{background:rgba(255,197,61,.28);color:#9a6b00}
   .todo{background:rgba(154,143,166,.18);color:#766c80}
+  .empty{padding:22px;text-align:center;color:var(--muted);font-size:.9rem}
+  .empty code{background:rgba(0,0,0,.05);padding:1px 6px;border-radius:5px}
   .foot{margin-top:52px;padding-top:22px;border-top:1px solid var(--line);color:var(--muted);font-size:.84rem;text-align:center}
   @media (prefers-reduced-motion:reduce){*{animation:none!important}}
 </style>
@@ -125,9 +127,9 @@
   <h1>It's Morphin' <span class="pop">Birthday Time</span></h1>
   <p class="sub">Five rangers, one celebration. Live from the group's Google Sheet. 🎂</p>
   <div class="chips">
-    <div class="chip"><b>WHEN</b><span>Sat 21 Mar, 7pm</span></div>
-    <div class="chip"><b>WHERE</b><span>Home</span></div>
-    <div class="chip"><b>SQUAD</b><span>5 + guests</span></div>
+    <div class="chip"><b>WHEN</b><span>Sat 14 Nov</span></div>
+    <div class="chip"><b>WHERE</b><span>Richard's House</span></div>
+    <div class="chip"><b>SQUAD</b><span id="squad">RSVPs open</span></div>
   </div>
 </header>
 
@@ -138,7 +140,7 @@
     <div class="scroll"><table><thead><tr><th>Job</th><th>Ranger</th><th>Deadline</th><th>Status</th></tr></thead><tbody id="roster"></tbody></table></div></section>
 
   <section><div class="sec-head"><span class="sec-num">3</span><h2>The List</h2><span class="rule"></span></div>
-    <p class="hint">Who's bringing what. Add an item by editing the shared sheet — it shows up here on ↻ Refresh.</p>
+    <p class="hint">Who's bringing what. Add an item by editing the <b>sheet</b> — it shows up here on ↻ Refresh.</p>
     <div class="scroll"><table>
       <thead><tr><th>Item</th><th>Covered by</th><th class="num">Cost</th></tr></thead>
       <tbody id="list"></tbody>
@@ -146,12 +148,20 @@
     </table></div>
   </section>
 
+  <section><div class="sec-head"><span class="sec-num">4</span><h2>Who's Coming</h2><span class="count" id="guestCount"></span><span class="rule"></span></div>
+    <p class="hint">RSVPs live from the <b>Guests</b> tab. Add a row <code>Name, Status</code> (Confirmed / Maybe / No) and the squad count updates.</p>
+    <div class="scroll"><table><thead><tr><th>Guest</th><th>RSVP</th></tr></thead><tbody id="guests"></tbody></table></div>
+  </section>
+
   <p class="foot">Live view of your Google Sheet · edit the Sheet and hit Refresh. Read-only here by design.</p>
 </div>
 
 <script>
-/* Reads the shared Google Sheet as CSV. Sheet must be link-accessible (Anyone with the link). */
-var SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1uVJ9D0e5C8GDOToImbVC5mffUbI6eGt0APDsoqL86DY/export?format=csv";
+var SHEET_ID = "1uVJ9D0e5C8GDOToImbVC5mffUbI6eGt0APDsoqL86DY";
+/* main planning tab (first sheet) — faithful CSV export */
+var SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/export?format=csv";
+/* guest list — read a tab named exactly "Guests" by name */
+var GUESTS_URL = "https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/gviz/tq?tqx=out:csv&headers=0&sheet=Guests";
 
 var COLORS={pink:"#FF7EB6",yellow:"#FFC53D",blue:"#56A8FF",red:"#FF6B6B",black:"#5A5A72",silver:"#C9CDE0"};
 var ROLE={pink:"Pink Ranger",yellow:"Yellow Ranger",blue:"Blue Ranger",red:"Red Ranger",black:"Black Ranger",silver:"Silver Ranger"};
@@ -192,11 +202,12 @@ function money(n){n=Math.round(n*100)/100;return "$"+Math.abs(n).toLocaleString(
 function esc(s){return String(s||"").replace(/[&<>]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;"}[c];});}
 function statusClass(s){s=(s||"").toLowerCase();return s.indexOf("done")>-1?"done":s.indexOf("progress")>-1?"prog":"todo";}
 
+var colorOf={};
 function render(rows){
   var people=section(rows,"PEOPLE").map(function(r){return{name:r[0],color:(r[1]||"").toLowerCase(),bday:r[2],eats:r[3]};});
   var jobs=section(rows,"RESPONSIBILITIES").map(function(r){return{task:r[0],owner:r[1],deadline:r[2],status:r[3]};});
   var list=section(rows,"LIST").map(function(r){return{item:r[0],by:r[1],cost:r[2]};});
-  var colorOf={}; people.forEach(function(p){colorOf[p.name.toLowerCase()]=p.color;});
+  colorOf={}; people.forEach(function(p){colorOf[p.name.toLowerCase()]=p.color;});
 
   document.getElementById("names").innerHTML=people.map(function(p){
     return '<span style="color:'+(COLORS[p.color]||"#999")+'">'+esc(p.name)+'</span>';}).join("");
@@ -225,21 +236,48 @@ function render(rows){
   document.getElementById("listTotal").textContent=any?money(total):"—";
 }
 
-function setStatus(live,txt){document.getElementById("status").innerHTML='<span class="dot-live '+(live?'':'dot-demo')+'"></span>'+txt;}
-function banner(html,err){var b=document.getElementById("banner");if(!html){b.innerHTML="";return;}b.innerHTML='<div class="banner'+(err?' err':'')+'">'+html+'</div>';}
-
-function load(){
-  if(!SHEET_CSV_URL){
-    render(EXAMPLE); setStatus(false,"Preview (example data)");
-    banner('Not connected — showing example data.');
+function rsvp(status){
+  var s=(status||"").toLowerCase();
+  if(s.indexOf("maybe")>-1) return {cls:"prog",label:"Maybe",go:0.5};
+  if(s.indexOf("no")>-1||s.indexOf("can")>-1||s.indexOf("decl")>-1) return {cls:"todo",label:"Can't make it",go:0};
+  if(s.indexOf("conf")>-1||s.indexOf("yes")>-1||s.indexOf("going")>-1) return {cls:"done",label:"Coming",go:1};
+  return {cls:"todo",label:esc(status||"—"),go:0};
+}
+function renderGuests(rows){
+  var guests=rows.filter(function(r){ return r && (r[0]||"").trim() && (r[0]||"").trim().toLowerCase()!=="name"; })
+                 .map(function(r){ return {name:r[0], status:r[1]}; });
+  var tb=document.getElementById("guests");
+  if(!guests.length){
+    tb.innerHTML='<tr><td colspan="2" class="empty">No RSVPs yet — add a tab named <code>Guests</code> with columns <code>Name</code>, <code>Status</code>.</td></tr>';
+    document.getElementById("squad").textContent="RSVPs open";
+    document.getElementById("guestCount").textContent="";
     return;
   }
+  var coming=0, maybe=0;
+  tb.innerHTML=guests.map(function(g){ var v=rsvp(g.status); if(v.go===1)coming++; else if(v.go===0.5)maybe++;
+    return '<tr><td>'+esc(g.name)+'</td><td><span class="pill '+v.cls+'">'+v.label+'</span></td></tr>';}).join("");
+  document.getElementById("squad").textContent=coming+" coming"+(maybe?" · "+maybe+" maybe":"");
+  document.getElementById("guestCount").textContent=coming+" confirmed"+(maybe?", "+maybe+" maybe":"");
+}
+
+function setStatus(live,txt){document.getElementById("status").innerHTML='<span class="dot-live '+(live?'':'dot-demo')+'"></span>'+txt;}
+function banner(html,err){var b=document.getElementById("banner");if(!html){b.innerHTML="";return;}b.innerHTML='<div class="banner'+(err?' err':'')+'">'+html+'</div>';}
+function bust(u){return u+(u.indexOf("?")>-1?"&":"?")+"t="+Date.now();}
+
+function loadGuests(){
+  fetch(bust(GUESTS_URL))
+    .then(function(r){if(!r.ok)throw new Error(r.status);return r.text();})
+    .then(function(t){ renderGuests(parseCSV(t)); })
+    .catch(function(){ renderGuests([]); }); // no Guests tab yet → friendly empty state
+}
+function load(){
   setStatus(true,"Syncing…"); banner("");
-  fetch(SHEET_CSV_URL+(SHEET_CSV_URL.indexOf("?")>-1?"&":"?")+"t="+Date.now())
+  fetch(bust(SHEET_CSV_URL))
     .then(function(r){if(!r.ok)throw new Error(r.status);return r.text();})
     .then(function(t){render(parseCSV(t));var d=new Date();setStatus(true,"Synced · "+d.toLocaleTimeString());})
     .catch(function(e){render(EXAMPLE);setStatus(false,"Couldn't reach the Sheet");
       banner('Could not load the Sheet ('+esc(e.message)+'). Showing example data. Make sure the sheet is shared <b>Anyone with the link</b>.',true);});
+  loadGuests();
 }
 document.getElementById("refresh").addEventListener("click",load);
 load();

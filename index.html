@@ -88,6 +88,13 @@
   .todo{background:rgba(154,143,166,.18);color:#766c80}
   .empty{padding:22px;text-align:center;color:var(--muted);font-size:.9rem}
   .empty code{background:rgba(0,0,0,.05);padding:1px 6px;border-radius:5px}
+  .gstats{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px}
+  .stat{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:8px 14px;
+    display:flex;align-items:baseline;gap:7px;box-shadow:0 3px 0 rgba(255,126,182,.08)}
+  .stat b{font-size:1.2rem;font-weight:700;font-variant-numeric:tabular-nums}
+  .stat .k{color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:.06em}
+  .stat.coming b{color:#2f6fb0} .stat.maybe b{color:#9a6b00} .stat.noreply b{color:var(--muted)}
+  .stat.total{background:var(--ink)} .stat.total b{color:#fff} .stat.total .k{color:var(--yellow)}
   .bal{font-weight:600;font-variant-numeric:tabular-nums}
   .owes{color:var(--red)} .owed{color:#2f9e92} .zero{color:var(--muted)}
   .settlebox{margin-top:14px;background:#fff;border:1.5px dashed var(--line);border-radius:16px;padding:14px 16px;font-size:.9rem;line-height:1.7}
@@ -153,7 +160,8 @@
   </section>
 
   <section><div class="sec-head"><span class="sec-num">4</span><h2>Who's Coming</h2><span class="count" id="guestCount"></span><span class="rule"></span></div>
-    <p class="hint">RSVPs live from the <b>ppl</b> tab. Add a row <code>Name, Status</code> (Confirmed / Maybe / No) and the squad count updates.</p>
+    <p class="hint">RSVPs live from the <b>ppl</b> tab. Add a row <code>Name, Status</code> (Confirmed / Maybe / No) and these counts update.</p>
+    <div class="gstats" id="gstats"></div>
     <div class="scroll"><table><thead><tr><th>Guest</th><th>RSVP</th></tr></thead><tbody id="guests"></tbody></table></div>
   </section>
 
@@ -286,12 +294,12 @@ function render(rows){
 
 function rsvp(status){
   var s=(status||"").toLowerCase().trim();
-  if(!s) return {cls:"todo",label:"—",go:0};
-  if(/response|reply|pending|tbd|await|invited|haven/.test(s)) return {cls:"todo",label:"No reply",go:0};   // hasn't answered
-  if(/maybe|perhaps|unsure|not sure|\?/.test(s)) return {cls:"prog",label:"Maybe",go:0.5};
-  if(/confirm|yes|going|coming|attend/.test(s)) return {cls:"done",label:"Coming",go:1};
-  if(/no|can'?t|cannot|decline|nope|out/.test(s)) return {cls:"todo",label:"Can't make it",go:0};
-  return {cls:"todo",label:esc(status),go:0};
+  if(!s) return {cls:"todo",label:"—",cat:"noreply"};
+  if(/response|reply|pending|tbd|await|invited|haven/.test(s)) return {cls:"todo",label:"No reply",cat:"noreply"};
+  if(/maybe|perhaps|unsure|not sure|\?/.test(s)) return {cls:"prog",label:"Maybe",cat:"maybe"};
+  if(/confirm|yes|going|coming|attend/.test(s)) return {cls:"done",label:"Coming",cat:"coming"};
+  if(/no|can'?t|cannot|decline|nope|out/.test(s)) return {cls:"todo",label:"Can't make it",cat:"cant"};
+  return {cls:"todo",label:esc(status),cat:"other"};
 }
 function renderGuests(rows){
   var guests=rows.filter(function(r){ return r && (r[0]||"").trim() && (r[0]||"").trim().toLowerCase()!=="name"; })
@@ -299,15 +307,25 @@ function renderGuests(rows){
   var tb=document.getElementById("guests");
   if(!guests.length){
     tb.innerHTML='<tr><td colspan="2" class="empty">No RSVPs yet — add rows to the <code>ppl</code> tab: <code>Name</code>, <code>Status</code>.</td></tr>';
+    document.getElementById("gstats").innerHTML="";
     document.getElementById("squad").textContent="RSVPs open";
     document.getElementById("guestCount").textContent="";
     return;
   }
-  var coming=0, maybe=0;
-  tb.innerHTML=guests.map(function(g){ var v=rsvp(g.status); if(v.go===1)coming++; else if(v.go===0.5)maybe++;
+  var c={coming:0,maybe:0,noreply:0,cant:0,other:0};
+  tb.innerHTML=guests.map(function(g){ var v=rsvp(g.status); c[v.cat]=(c[v.cat]||0)+1;
     return '<tr><td>'+esc(g.name)+'</td><td><span class="pill '+v.cls+'">'+v.label+'</span></td></tr>';}).join("");
-  document.getElementById("squad").textContent=coming+" coming"+(maybe?" · "+maybe+" maybe":"");
-  document.getElementById("guestCount").textContent=coming+" confirmed"+(maybe?", "+maybe+" maybe":"");
+  function stat(num,lab,cls){ return '<div class="stat '+cls+'"><b>'+num+'</b><span class="k">'+lab+'</span></div>'; }
+  var h=stat(c.coming,"coming","coming");
+  if(c.maybe) h+=stat(c.maybe,"maybe","maybe");
+  if(c.noreply) h+=stat(c.noreply,"no reply","noreply");
+  if(c.cant) h+=stat(c.cant,"can't make it","noreply");
+  if(c.other) h+=stat(c.other,"other","noreply");
+  h+=stat(c.coming+c.maybe,"likely headcount","total");
+  h+=stat(guests.length,"invited","total");
+  document.getElementById("gstats").innerHTML=h;
+  document.getElementById("squad").textContent=c.coming+" coming"+(c.maybe?" · "+c.maybe+" maybe":"");
+  document.getElementById("guestCount").textContent=guests.length+" invited";
 }
 
 function setStatus(live,txt){document.getElementById("status").innerHTML='<span class="dot-live '+(live?'':'dot-demo')+'"></span>'+txt;}

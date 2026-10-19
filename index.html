@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Morphin' Birthday — Live Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     CONFIG: paste your published-CSV URL below (see README).
+     Leave blank to preview with the built-in example data.
+     ============================================================ */
+  :root{
+    --pink:#FF7EB6; --yellow:#FFC53D; --blue:#56A8FF; --red:#FF6B6B;
+    --black:#5A5A72; --silver:#C9CDE0;
+    --ground:#FFF4FA; --panel:#FFFFFF; --panel2:#FFF0F7;
+    --ink:#3A2E45; --muted:#9A8FA6; --line:#F0DDEA;
+    --shadow:0 4px 0 rgba(255,126,182,.12), 0 12px 30px rgba(109,74,120,.12);
+    --font:"Fredoka", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--font);
+       font-weight:400;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 20px 80px}
+
+  .topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+    justify-content:center;background:rgba(255,244,250,.92);backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--line);padding:9px 16px;font-size:.82rem;color:var(--muted)}
+  .topbar b{color:var(--pink)}
+  .topbar button{font-family:var(--font);font-weight:600;font-size:.78rem;color:var(--ink);
+    background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:5px 14px;cursor:pointer}
+  .topbar button:hover{border-color:var(--pink);color:var(--pink)}
+  .dot-live{width:8px;height:8px;border-radius:50%;background:#43c67e;display:inline-block;margin-right:5px}
+  .dot-demo{background:var(--yellow)}
+
+  .banner{max-width:1000px;margin:14px auto 0;padding:12px 16px;border-radius:16px;font-size:.86rem;
+    background:#FFF7E0;border:1.5px solid #F2D98B;color:#8a6b14}
+  .banner.err{background:#FFE9E9;border-color:#F2B3B3;color:#9a3b3b}
+  .banner code{background:rgba(0,0,0,.06);padding:1px 5px;border-radius:5px}
+
+  header{position:relative;overflow:hidden;text-align:center;padding:48px 20px 40px;
+    background:radial-gradient(120% 90% at 50% -10%,#FFE3F1,transparent 60%),var(--ground)}
+  .names{display:flex;gap:7px 16px;flex-wrap:wrap;justify-content:center;
+    font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;font-weight:600;margin:0 0 16px}
+  .names span{display:inline-flex;align-items:center;gap:7px}
+  .names span::before{content:"";width:9px;height:9px;border-radius:50%;background:currentColor}
+  h1{font-weight:600;font-size:clamp(2.4rem,7vw,4.2rem);line-height:1.05;margin:0}
+  h1 .pop{background:linear-gradient(90deg,var(--pink),var(--red) 50%,var(--yellow));
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .sub{margin:14px auto 22px;max-width:48ch;color:#8a7a92;font-size:1.02rem}
+  .chips{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  .chip{background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:7px 15px;font-size:.82rem;
+    box-shadow:0 3px 0 rgba(255,126,182,.1)}
+  .chip b{color:var(--pink);font-weight:600;letter-spacing:.04em;margin-right:5px}
+
+  section{margin-top:50px}
+  .sec-head{display:flex;align-items:center;gap:13px;margin-bottom:20px}
+  .sec-num{font-weight:600;font-size:1.2rem;color:#fff;background:var(--pink);
+    width:40px;height:40px;border-radius:14px;display:grid;place-items:center;
+    box-shadow:0 4px 0 rgba(255,126,182,.35);flex:none}
+  .sec-head h2{font-weight:600;font-size:1.8rem;margin:0}
+  .sec-head .rule{flex:1;height:3px;border-radius:3px;background:var(--line)}
+
+  .team{display:grid;grid-template-columns:repeat(auto-fit,minmax(172px,1fr));gap:18px}
+  .ranger{--c:var(--muted);background:var(--panel);border:1.5px solid var(--line);border-radius:22px;
+    box-shadow:var(--shadow);padding:20px 18px;text-align:center}
+  .helmet{width:74px;height:74px;margin:0 auto 6px;border-radius:50% 50% 42% 42%;background:var(--c);
+    position:relative;box-shadow:inset 0 -7px 10px rgba(0,0,0,.14),0 6px 0 rgba(0,0,0,.08);
+    animation:bob 3.2s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  .visor{position:absolute;left:15%;right:15%;top:34%;height:30%;background:#2E2640;
+    border-radius:0 0 16px 16px/0 0 22px 22px;display:flex;align-items:center;justify-content:center;gap:12px}
+  .visor i{width:9px;height:9px;background:#fff;border-radius:50%;box-shadow:0 0 6px rgba(255,255,255,.8)}
+  .gem{position:absolute;top:9px;left:50%;transform:translateX(-50%) rotate(45deg);width:10px;height:10px;
+    background:#fff;border-radius:3px;opacity:.9}
+  .ranger h3{margin:4px 0 0;font-weight:600;font-size:1.3rem}
+  .ranger .role{color:var(--c);font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin:3px 0 12px}
+  .ranger dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 8px;font-size:.82rem;text-align:left}
+  .ranger dt{color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-size:.64rem;align-self:center}
+  .ranger dd{margin:0}
+  .ranger dd:empty::before{content:"—";color:var(--muted)}
+
+  .scroll{overflow-x:auto;border:1.5px solid var(--line);border-radius:22px;background:var(--panel);box-shadow:var(--shadow)}
+  table{width:100%;border-collapse:collapse;min-width:540px}
+  th{font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:left;
+    font-weight:600;padding:15px 18px;border-bottom:2px solid var(--line)}
+  td{padding:13px 18px;border-bottom:1px solid var(--line);font-size:.92rem;vertical-align:middle}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:nth-child(even){background:var(--panel2)}
+  .num{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+  th.num{text-align:right}
+  .owner{display:inline-flex;align-items:center;gap:9px;font-weight:500}
+  .owner .mini{width:24px;height:24px;border-radius:9px;color:#fff;font-size:.72rem;font-weight:600;
+    display:grid;place-items:center;flex:none}
+  .pill{font-size:.72rem;font-weight:600;padding:4px 13px;border-radius:999px;white-space:nowrap}
+  .done{background:rgba(86,168,255,.18);color:#2f6fb0}
+  .prog{background:rgba(255,197,61,.28);color:#9a6b00}
+  .todo{background:rgba(154,143,166,.18);color:#766c80}
+
+  .totals{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px}
+  @media(max-width:560px){.totals{grid-template-columns:1fr}}
+  .tcard{padding:20px 24px;border-radius:22px;box-shadow:var(--shadow)}
+  .tcard.sum{background:var(--panel);border:1.5px solid var(--line)}
+  .tcard.per{background:linear-gradient(135deg,var(--pink),var(--red));color:#fff}
+  .tcard .lab{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .tcard.per .lab{color:rgba(255,255,255,.9)}
+  .tcard .big{font-weight:600;font-size:2.6rem;margin-top:2px;font-variant-numeric:tabular-nums}
+  .tcard .small{font-size:.78rem;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums}
+
+  .bal{font-weight:600;font-variant-numeric:tabular-nums}
+  .owes{color:var(--red)} .owed{color:#2f9e92} .zero{color:var(--muted)}
+  .checkline{margin-top:14px;text-align:center;font-size:.9rem;color:var(--muted);
+    background:#fff;border:1.5px dashed var(--line);border-radius:16px;padding:11px}
+  .checkline b{color:var(--ink)}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;color:var(--muted);font-size:.8rem;margin-top:12px}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .swatch{width:12px;height:12px;border-radius:4px;display:inline-block}
+  .foot{margin-top:52px;padding-top:22px;border-top:1px solid var(--line);color:var(--muted);font-size:.84rem;text-align:center}
+
+  @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span id="status"><span class="dot-live"></span>Loading…</span>
+  <button id="refresh" type="button">↻ Refresh</button>
+</div>
+<div id="banner"></div>
+
+<header>
+  <p class="names" id="names"></p>
+  <h1>It's Morphin' <span class="pop">Birthday Time</span></h1>
+  <p class="sub">Five rangers, one celebration. Live from the group's Google Sheet. 🎂</p>
+  <div class="chips">
+    <div class="chip"><b>WHEN</b><span>Sat 21 Mar, 7pm</span></div>
+    <div class="chip"><b>WHERE</b><span>The Command Center</span></div>
+    <div class="chip"><b>SQUAD</b><span>5 + guests</span></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <section><div class="sec-head"><span class="sec-num">1</span><h2>The Team</h2><span class="rule"></span></div><div class="team" id="team"></div></section>
+  <section><div class="sec-head"><span class="sec-num">2</span><h2>Mission Roster</h2><span class="rule"></span></div><div class="scroll"><table><thead><tr><th>Job</th><th>Ranger</th><th>Deadline</th><th>Status</th></tr></thead><tbody id="roster"></tbody></table></div></section>
+  <section><div class="sec-head"><span class="sec-num">3</span><h2>Mission Funds</h2><span class="rule"></span></div>
+    <div class="scroll"><table><thead><tr><th>Item</th><th class="num">Estimated</th><th class="num">Actual</th><th>Covered by</th></tr></thead><tbody id="budget"></tbody></table></div>
+    <div class="totals"><div class="tcard sum"><div class="lab">Total spend</div><div class="big" id="totalActual">—</div><div class="small">est. <span id="totalEst">—</span></div></div><div class="tcard per"><div class="lab">Per ranger</div><div class="big" id="perPerson">—</div></div></div>
+  </section>
+  <section><div class="sec-head"><span class="sec-num">4</span><h2>Power Balance</h2><span class="rule"></span></div>
+    <div class="scroll"><table><thead><tr><th>Ranger</th><th class="num">Paid</th><th class="num">Fair share</th><th class="num">Balance</th><th>Result</th></tr></thead><tbody id="settle"></tbody></table></div>
+    <div class="checkline" id="checkLine"></div>
+    <div class="legend"><span><span class="swatch" style="background:#2f9e92"></span> Gets money back</span><span><span class="swatch" style="background:var(--red)"></span> Owes into the pot</span></div>
+  </section>
+  <p class="foot">Live view of your Google Sheet · edit the Sheet and hit Refresh. Read-only — changes here aren't possible, that's on purpose.</p>
+</div>
+
+<script>
+/* ===== 1. PASTE YOUR PUBLISHED CSV URL HERE =====
+   Google Sheet → File → Share → Publish to web → (your tab) → CSV → Publish,
+   then paste the pub?...output=csv URL between the quotes below.      */
+var SHEET_CSV_URL = "";
+/* ================================================= */
+
+var COLORS={pink:"#FF7EB6",yellow:"#FFC53D",blue:"#56A8FF",red:"#FF6B6B",black:"#5A5A72",silver:"#C9CDE0"};
+var ROLE={pink:"Pink Ranger",yellow:"Yellow Ranger",blue:"Blue Ranger",red:"Red Ranger",black:"Black Ranger",silver:"Silver Ranger"};
+
+var EXAMPLE = [
+ ["PEOPLE","","",""],["Name","Color","Birthday","Eats"],
+ ["Jenny","pink","",""],["Ashlie","yellow","",""],["Brandon","blue","",""],["Carl","red","",""],["Richard","black","",""],["","","",""],
+ ["RESPONSIBILITIES","","",""],["Task","Owner","Deadline","Status"],
+ ["Book & prep venue","Carl","1 Mar","Done"],["Cake(s) & dessert","Ashlie","18 Mar","In progress"],
+ ["Food & catering","Jenny","19 Mar","In progress"],["Drinks","Brandon","20 Mar","Not started"],
+ ["Decorations","Richard","19 Mar","Not started"],["Music & playlist","Brandon","20 Mar","Not started"],
+ ["Invites & RSVPs","Jenny","5 Mar","Done"],["Photos on the night","Carl","Day of","Not started"],
+ ["Cleanup","All rangers","Day after","Not started"],["","","",""],
+ ["BUDGET","","",""],["Item","Estimated","Actual","Covered by"],
+ ["Venue","220","200","Carl"],["Cake(s)","80","85","Ashlie"],["Food","250","240","Jenny"],
+ ["Drinks","100","110","Brandon"],["Decorations","55","60","Richard"],["Extras","40","45","Richard"],["","","",""],
+ ["SETTLE","","",""],["Person","Paid","",""],
+ ["Jenny","240","",""],["Carl","200","",""],["Brandon","110","",""],["Richard","105","",""],["Ashlie","85","",""]
+];
+
+function parseCSV(text){
+  var rows=[],row=[],cur="",q=false;
+  for(var i=0;i<text.length;i++){var c=text[i];
+    if(q){ if(c=='"'){ if(text[i+1]=='"'){cur+='"';i++;} else q=false; } else cur+=c; }
+    else { if(c=='"')q=true; else if(c==',' ){row.push(cur);cur="";}
+      else if(c=='\n'){row.push(cur);rows.push(row);row=[];cur="";}
+      else if(c=='\r'){} else cur+=c; } }
+  if(cur!==""||row.length){row.push(cur);rows.push(row);}
+  return rows;
+}
+function section(rows,name){
+  var out=[],i=0;
+  for(;i<rows.length;i++){ if((rows[i][0]||"").trim().toUpperCase()===name){i+=2;break;} }
+  for(;i<rows.length;i++){ var r=rows[i]; if(!r||!(r[0]||"").trim())break; out.push(r); }
+  return out;
+}
+function num(v){var n=parseFloat(String(v||"").replace(/[^0-9.\-]/g,""));return isNaN(n)?0:n;}
+function money(n){n=Math.round(n*100)/100;return "$"+Math.abs(n).toLocaleString(undefined,{maximumFractionDigits:2});}
+function esc(s){return String(s||"").replace(/[&<>]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;"}[c];});}
+function statusClass(s){s=(s||"").toLowerCase();return s.indexOf("done")>-1?"done":s.indexOf("progress")>-1?"prog":"todo";}
+
+function render(rows){
+  var people=section(rows,"PEOPLE").map(function(r){return{name:r[0],color:(r[1]||"").toLowerCase(),bday:r[2],eats:r[3]};});
+  var jobs=section(rows,"RESPONSIBILITIES").map(function(r){return{task:r[0],owner:r[1],deadline:r[2],status:r[3]};});
+  var budget=section(rows,"BUDGET").map(function(r){return{item:r[0],est:num(r[1]),act:num(r[2]),by:r[3]};});
+  var settle=section(rows,"SETTLE").map(function(r){return{name:r[0],paid:num(r[1])};});
+  var colorOf={}; people.forEach(function(p){colorOf[p.name.toLowerCase()]=p.color;});
+
+  document.getElementById("names").innerHTML=people.map(function(p){
+    return '<span style="color:'+(COLORS[p.color]||"#999")+'">'+esc(p.name)+'</span>';}).join("");
+
+  document.getElementById("team").innerHTML=people.map(function(p){
+    var hex=COLORS[p.color]||"#999";
+    return '<div class="ranger" style="--c:'+hex+'"><div class="helmet"><span class="gem"></span><span class="visor"><i></i><i></i></span></div>'+
+      '<h3>'+esc(p.name)+'</h3><div class="role"'+(p.color=="black"?' style="color:#8b8ba5"':'')+'>'+(ROLE[p.color]||"Ranger")+'</div>'+
+      '<dl><dt>B-day</dt><dd>'+esc(p.bday)+'</dd><dt>Eats</dt><dd>'+esc(p.eats)+'</dd></dl></div>';}).join("");
+
+  document.getElementById("roster").innerHTML=jobs.map(function(j){
+    var col=COLORS[colorOf[(j.owner||"").toLowerCase()]]||"#9A8FA6";
+    var ini=(j.owner||"?").trim().charAt(0).toUpperCase();
+    return '<tr><td>'+esc(j.task)+'</td><td><span class="owner"><span class="mini" style="background:'+col+'">'+esc(ini)+'</span>'+esc(j.owner)+'</span></td>'+
+      '<td>'+esc(j.deadline)+'</td><td><span class="pill '+statusClass(j.status)+'">'+esc(j.status)+'</span></td></tr>';}).join("");
+
+  var total=0,est=0;
+  document.getElementById("budget").innerHTML=budget.map(function(b){total+=b.act;est+=b.est;
+    return '<tr><td>'+esc(b.item)+'</td><td class="num">'+money(b.est)+'</td><td class="num">'+money(b.act)+'</td><td>'+esc(b.by)+'</td></tr>';}).join("");
+  var n=settle.length||people.length||1, share=total/n;
+  document.getElementById("totalActual").textContent=money(total);
+  document.getElementById("totalEst").textContent=money(est);
+  document.getElementById("perPerson").textContent=money(share);
+
+  var paidSum=0;
+  document.getElementById("settle").innerHTML=settle.map(function(s){paidSum+=s.paid;
+    var bal=s.paid-share, cls=bal>0.004?"owed":bal<-0.004?"owes":"zero";
+    var sign=bal>0.004?"+":bal<-0.004?"−":"";
+    var res=bal>0.004?'<span class="pill done">Gets back '+money(bal)+'</span>':bal<-0.004?'<span class="pill prog">Owes '+money(bal)+'</span>':'<span class="pill todo">Settled</span>';
+    return '<tr><td>'+esc(s.name)+'</td><td class="num">'+money(s.paid)+'</td><td class="num">'+money(share)+'</td>'+
+      '<td class="num bal '+cls+'">'+sign+money(bal)+'</td><td>'+res+'</td></tr>';}).join("");
+  var diff=paidSum-total,cl=document.getElementById("checkLine");
+  if(Math.abs(diff)<0.004)cl.innerHTML='Paid so far <b>'+money(paidSum)+'</b> of <b>'+money(total)+'</b> — balances to <b>$0</b> ✓';
+  else if(diff<0)cl.innerHTML='⚠ <b>'+money(diff)+'</b> still unpaid — paid <b>'+money(paidSum)+'</b> of <b>'+money(total)+'</b>';
+  else cl.innerHTML='⚠ <b>'+money(diff)+'</b> overpaid — paid <b>'+money(paidSum)+'</b> of <b>'+money(total)+'</b>';
+}
+
+function setStatus(live,txt){document.getElementById("status").innerHTML='<span class="dot-live '+(live?'':'dot-demo')+'"></span>'+txt;}
+function banner(html,err){var b=document.getElementById("banner");if(!html){b.innerHTML="";return;}b.innerHTML='<div class="banner'+(err?' err':'')+'">'+html+'</div>';}
+
+function load(){
+  if(!SHEET_CSV_URL){
+    render(EXAMPLE); setStatus(false,"Preview (example data)");
+    banner('Not connected yet — showing example data. Paste your published-CSV URL into <code>SHEET_CSV_URL</code> in this file. See the README.');
+    return;
+  }
+  setStatus(true,"Syncing…"); banner("");
+  fetch(SHEET_CSV_URL+(SHEET_CSV_URL.indexOf("?")>-1?"&":"?")+"t="+Date.now())
+    .then(function(r){if(!r.ok)throw new Error(r.status);return r.text();})
+    .then(function(t){render(parseCSV(t));var d=new Date();setStatus(true,"Synced · "+d.toLocaleTimeString());})
+    .catch(function(e){render(EXAMPLE);setStatus(false,"Couldn't reach the Sheet");
+      banner('Could not load the Sheet ('+esc(e.message)+'). Showing example data. Check the sheet is <b>Published to web as CSV</b> and the URL is correct.',true);});
+}
+document.getElementById("refresh").addEventListener("click",load);
+load();
+</script>
+</body>
+</html>

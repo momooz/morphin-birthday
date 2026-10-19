@@ -267,8 +267,11 @@ function bust(u){return u+(u.indexOf("?")>-1?"&":"?")+"t="+Date.now();}
 function loadGuests(){
   fetch(bust(GUESTS_URL))
     .then(function(r){if(!r.ok)throw new Error(r.status);return r.text();})
-    .then(function(t){ renderGuests(parseCSV(t)); })
-    .catch(function(){ renderGuests([]); }); // no Guests tab yet → friendly empty state
+    .then(function(t){ var rows=parseCSV(t);
+      // gviz falls back to the first tab when "Guests" doesn't exist — detect that and show empty state
+      var isMain=rows.some(function(r){var k=(r[0]||"").trim().toUpperCase();return k==="PEOPLE"||k==="RESPONSIBILITIES"||k==="LIST";});
+      renderGuests(isMain?[]:rows); })
+    .catch(function(){ renderGuests([]); });
 }
 function load(){
   setStatus(true,"Syncing…"); banner("");

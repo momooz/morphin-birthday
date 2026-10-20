@@ -82,6 +82,7 @@
   tfoot td{padding:15px 18px;border-top:2px solid var(--line);font-weight:600}
   .totlab{text-align:right;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;font-size:.7rem}
   #listTotal{font-size:1.15rem}
+  .owners{display:flex;flex-wrap:wrap;gap:6px 12px}
   .owner{display:inline-flex;align-items:center;gap:9px;font-weight:500}
   .owner .mini{width:24px;height:24px;border-radius:9px;color:#fff;font-size:.72rem;font-weight:600;
     display:grid;place-items:center;flex:none}
@@ -262,9 +263,12 @@ function render(rows){
       '<dl><dt>B-day</dt><dd>'+esc(p.bday)+'</dd><dt>Eats</dt><dd>'+esc(p.eats)+'</dd></dl></div>';}).join("");
 
   document.getElementById("roster").innerHTML=jobs.map(function(j){
-    var col=COLORS[colorOf[(j.owner||"").toLowerCase()]]||"#9A8FA6";
-    var ini=(j.owner||"?").trim().charAt(0).toUpperCase();
-    return '<tr><td>'+esc(j.task)+'</td><td><span class="owner"><span class="mini" style="background:'+col+'">'+esc(ini)+'</span>'+esc(j.owner)+'</span></td>'+
+    var owners=String(j.owner||"").split(/\s*,\s*|\s*\/\s*|\s*&\s*|\s+and\s+/i).map(function(x){return x.trim();}).filter(Boolean);
+    var ownerHtml=owners.length ? '<div class="owners">'+owners.map(function(o){
+        var col=COLORS[colorOf[o.toLowerCase()]]||"#9A8FA6";
+        return '<span class="owner"><span class="mini" style="background:'+col+'">'+esc(o.charAt(0).toUpperCase())+'</span>'+esc(o)+'</span>';
+      }).join("")+'</div>' : '<span style="color:var(--muted)">—</span>';
+    return '<tr><td>'+esc(j.task)+'</td><td>'+ownerHtml+'</td>'+
       '<td>'+esc(j.deadline)+'</td><td><span class="pill '+statusClass(j.status)+'">'+esc(j.status)+'</span></td></tr>';}).join("");
 
   var total=0, any=false;
